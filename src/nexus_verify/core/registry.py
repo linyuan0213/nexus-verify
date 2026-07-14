@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from nexus_verify.core.exceptions import ProviderNotFoundError, ProviderUnavailableError
 from nexus_verify.core.result import VerifyResult
 from nexus_verify.core.task import TaskType, VerifyTask
-
-if TYPE_CHECKING:
-    from nexus_verify.providers.base import Provider
 
 
 class ProviderRegistry:

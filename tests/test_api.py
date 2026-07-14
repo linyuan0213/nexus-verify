@@ -3,7 +3,6 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from nexus_verify.api.schemas import VerifyRequest
 from nexus_verify.main import app
 
 

@@ -4,7 +4,9 @@ import cv2
 import numpy as np
 
 
-def resize(image: np.ndarray, width: int | None = None, height: int | None = None) -> np.ndarray:
+def resize(
+    image: np.ndarray, width: int | None = None, height: int | None = None
+) -> np.ndarray:
     """Resize an image keeping aspect ratio if only one dimension is given."""
     h, w = image.shape[:2]
     if width is None and height is None:
@@ -30,7 +32,9 @@ def crop(image: np.ndarray, x: int, y: int, w: int, h: int) -> np.ndarray:
     return image[y : y + h, x : x + w]
 
 
-def rotate(image: np.ndarray, angle: float, center: tuple[int, int] | None = None) -> np.ndarray:
+def rotate(
+    image: np.ndarray, angle: float, center: tuple[int, int] | None = None
+) -> np.ndarray:
     """Rotate image by the given angle in degrees."""
     h, w = image.shape[:2]
     if center is None:
@@ -46,7 +50,11 @@ def find_best_rotation(
 ) -> tuple[int, float]:
     """Find the rotation angle that best matches template by correlation."""
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
-    tmpl = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY) if len(template.shape) == 3 else template
+    tmpl = (
+        cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
+        if len(template.shape) == 3
+        else template
+    )
 
     best_angle = 0
     best_score = -1.0

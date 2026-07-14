@@ -2,9 +2,13 @@
 
 import pytest
 
-from nexus_verify.core import ProviderRegistry, ProviderNotFoundError, ProviderUnavailableError
+from nexus_verify.core import (
+    ProviderRegistry,
+    ProviderNotFoundError,
+    ProviderUnavailableError,
+)
 from nexus_verify.core.task import TaskType, VerifyTask
-from tests.conftest import DummyProvider, UnavailableProvider
+from tests.conftest import UnavailableProvider
 
 
 def test_register_and_list(registry: ProviderRegistry) -> None:

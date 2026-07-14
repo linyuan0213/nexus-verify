@@ -2,8 +2,7 @@
 
 from typing import Any
 
-from PIL import Image
-
+import ddddocr
 from nexus_verify.core.exceptions import RecognitionError
 from nexus_verify.core.result import VerifyResult
 from nexus_verify.core.task import TaskType, VerifyTask
@@ -20,16 +19,9 @@ class DdddOcrProvider(Provider):
 
     @property
     def available(self) -> bool:
-        try:
-            import ddddocr
-
-            return True
-        except ImportError:
-            return False
+        return True
 
     async def verify(self, task: VerifyTask) -> VerifyResult:
-        import ddddocr
-
         image = load_image(task)
 
         if task.task_type == TaskType.CAPTCHA:
@@ -50,7 +42,9 @@ class DdddOcrProvider(Provider):
 
         raise RecognitionError(f"Unsupported task type: {task.task_type}")
 
-    def _recognize_captcha(self, image: Any, ocr: Any, extra: dict[str, Any] | None) -> VerifyResult:
+    def _recognize_captcha(
+        self, image: Any, ocr: Any, extra: dict[str, Any] | None
+    ) -> VerifyResult:
         if extra is None or extra.get("preprocess", True):
             pil_image = preprocess_captcha(image, extra)
         else:
@@ -60,7 +54,9 @@ class DdddOcrProvider(Provider):
         text = text.replace("之", "2").replace(">", "7").upper()
         return VerifyResult(text=text)
 
-    def _recognize_click(self, image: Any, det_ocr: Any, cls_ocr: Any, target: str) -> VerifyResult:
+    def _recognize_click(
+        self, image: Any, det_ocr: Any, cls_ocr: Any, target: str
+    ) -> VerifyResult:
         solver = ClickCaptchaSolver(det_ocr, cls_ocr)
         points = solver.solve(image, target)
         return VerifyResult(points=points)
@@ -70,7 +66,9 @@ class DdddOcrProvider(Provider):
         texts = [det["text"] for det in detections]
         return VerifyResult(text="\n".join(texts))
 
-    def _detect_and_classify(self, image: Any, det_ocr: Any, cls_ocr: Any) -> list[dict[str, Any]]:
+    def _detect_and_classify(
+        self, image: Any, det_ocr: Any, cls_ocr: Any
+    ) -> list[dict[str, Any]]:
         try:
             pil_image = cv2_to_pil(image)
             boxes = det_ocr.detection(pil_image)

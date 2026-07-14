@@ -9,7 +9,12 @@ from nexus_verify.preprocessing.filters import (
     noise_unsome_pixel,
     preprocess_captcha,
 )
-from nexus_verify.preprocessing.image import cv2_to_pil, decode_base64, load_image, pil_to_cv2
+from nexus_verify.preprocessing.image import (
+    cv2_to_pil,
+    decode_base64,
+    load_image,
+    pil_to_cv2,
+)
 from nexus_verify.preprocessing.transforms import (
     crop,
     find_best_rotation,

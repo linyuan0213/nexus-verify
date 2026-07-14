@@ -64,7 +64,9 @@ def test_crop_slider_returns_full_image_when_no_content(
     assert cropped.shape == slider.shape
 
 
-def _pattern_image(width: int, height: int, base_color: tuple[int, int, int]) -> Image.Image:
+def _pattern_image(
+    width: int, height: int, base_color: tuple[int, int, int]
+) -> Image.Image:
     image = Image.new("RGB", (width, height), base_color)
     pixels = image.load()
     assert pixels is not None
@@ -75,7 +77,9 @@ def _pattern_image(width: int, height: int, base_color: tuple[int, int, int]) ->
     return image
 
 
-def test_match_slider_applies_offset_correction(provider: SlideProvider, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_match_slider_applies_offset_correction(
+    provider: SlideProvider, monkeypatch: pytest.MonkeyPatch
+) -> None:
     """Distance should be reduced by the signed slider offset."""
     monkeypatch.setattr(provider, "_ddddocr_match", lambda _bg, _slider: None)
 
@@ -98,9 +102,13 @@ def test_match_slider_applies_offset_correction(provider: SlideProvider, monkeyp
 
 
 @pytest.mark.asyncio
-async def test_verify_slide_captcha_requires_slider_b64(provider: SlideProvider) -> None:
+async def test_verify_slide_captcha_requires_slider_b64(
+    provider: SlideProvider,
+) -> None:
     """Missing slider_b64 should raise an error."""
-    task = VerifyTask(task_type=TaskType.SLIDE_CAPTCHA, image_b64=_make_b64(_white_image(100, 100)))
+    task = VerifyTask(
+        task_type=TaskType.SLIDE_CAPTCHA, image_b64=_make_b64(_white_image(100, 100))
+    )
     with pytest.raises(Exception):  # ImageDecodeError
         await provider.verify(task)
 

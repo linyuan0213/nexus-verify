@@ -1,9 +1,6 @@
 """OpenCV-based provider for rotate captcha tasks."""
 
-import cv2
-from typing import Any
-
-from nexus_verify.core.exceptions import ImageDecodeError, RecognitionError
+from nexus_verify.core.exceptions import ImageDecodeError
 from nexus_verify.core.result import VerifyResult
 from nexus_verify.core.task import TaskType, VerifyTask
 from nexus_verify.preprocessing import decode_base64, load_image, pil_to_cv2
@@ -19,12 +16,7 @@ class RotateProvider(Provider):
 
     @property
     def available(self) -> bool:
-        try:
-            import cv2
-
-            return True
-        except ImportError:
-            return False
+        return True
 
     async def verify(self, task: VerifyTask) -> VerifyResult:
         image = load_image(task)

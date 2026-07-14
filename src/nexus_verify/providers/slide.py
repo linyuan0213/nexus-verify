@@ -4,12 +4,13 @@ import io
 from typing import Any
 
 import cv2
+import ddddocr
 import numpy as np
 
 from nexus_verify.core.exceptions import ImageDecodeError, RecognitionError
 from nexus_verify.core.result import VerifyResult
 from nexus_verify.core.task import TaskType, VerifyTask
-from nexus_verify.preprocessing import decode_base64, grayscale, load_image
+from nexus_verify.preprocessing import decode_base64, grayscale, load_image, pil_to_cv2
 from nexus_verify.providers.base import Provider
 
 
@@ -21,12 +22,7 @@ class SlideProvider(Provider):
 
     @property
     def available(self) -> bool:
-        try:
-            import cv2
-
-            return True
-        except ImportError:
-            return False
+        return True
 
     async def verify(self, task: VerifyTask) -> VerifyResult:
         background = load_image(task)
@@ -48,8 +44,6 @@ class SlideProvider(Provider):
         slider_b64 = extra.get("slider_b64")
         if not slider_b64:
             raise ImageDecodeError("slide_captcha requires extra.slider_b64")
-        from nexus_verify.preprocessing.image import pil_to_cv2
-
         return pil_to_cv2(decode_base64(slider_b64))
 
     def _crop_slider(self, slider: np.ndarray) -> tuple[np.ndarray, int]:
@@ -100,7 +94,9 @@ class SlideProvider(Provider):
             x + cx,
         )
 
-    def _fit_to_background(self, slider: np.ndarray, background: np.ndarray) -> np.ndarray:
+    def _fit_to_background(
+        self, slider: np.ndarray, background: np.ndarray
+    ) -> np.ndarray:
         """Resize slider so it fits inside the background for template matching."""
         bh, bw = background.shape[:2]
         sh, sw = slider.shape[:2]
@@ -144,7 +140,9 @@ class SlideProvider(Provider):
         x = int(points[0][0])
         y = int(points[0][1])
         distance = max(0, x + slider_offset)
-        return VerifyResult(distance=distance, points=[(x, y)], confidence=best_confidence)
+        return VerifyResult(
+            distance=distance, points=[(x, y)], confidence=best_confidence
+        )
 
     def _resize_slider(
         self, slider: np.ndarray, scale: float, background: np.ndarray
@@ -159,11 +157,6 @@ class SlideProvider(Provider):
     def _ddddocr_match(
         self, background: np.ndarray, slider: np.ndarray
     ) -> VerifyResult | None:
-        try:
-            import ddddocr
-        except ImportError:
-            return None
-
         try:
             slide = ddddocr.DdddOcr(det=False, ocr=False, show_ad=False)
             bg_bytes = self._cv2_to_bytes(background)

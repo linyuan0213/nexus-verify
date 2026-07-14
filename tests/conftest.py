@@ -12,7 +12,9 @@ from nexus_verify.core.task import TaskType, VerifyTask
 from nexus_verify.providers.base import Provider
 
 
-def make_image_b64(width: int = 100, height: int = 40, color: tuple[int, int, int] = (255, 255, 255)) -> str:
+def make_image_b64(
+    width: int = 100, height: int = 40, color: tuple[int, int, int] = (255, 255, 255)
+) -> str:
     """Create a simple base64 encoded PNG image for tests."""
     image = Image.new("RGB", (width, height), color)
     buffer = BytesIO()

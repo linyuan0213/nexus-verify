@@ -19,7 +19,9 @@ def grayscale(image: np.ndarray) -> np.ndarray:
 def binary(image: np.ndarray, threshold: int = 0) -> np.ndarray:
     """Binarize a grayscale image. Use Otsu if threshold is 0."""
     gray = grayscale(image)
-    method = cv2.THRESH_BINARY | cv2.THRESH_OTSU if threshold == 0 else cv2.THRESH_BINARY
+    method = (
+        cv2.THRESH_BINARY | cv2.THRESH_OTSU if threshold == 0 else cv2.THRESH_BINARY
+    )
     _, binary_image = cv2.threshold(gray, threshold, 255, method)
     return binary_image
 
@@ -27,7 +29,9 @@ def binary(image: np.ndarray, threshold: int = 0) -> np.ndarray:
 def denoise(image: np.ndarray, h: int = 30) -> np.ndarray:
     """Apply non-local means denoising."""
     gray = grayscale(image)
-    return cv2.fastNlMeansDenoising(gray, h=h, templateWindowSize=11, searchWindowSize=21)
+    return cv2.fastNlMeansDenoising(
+        gray, h=h, templateWindowSize=11, searchWindowSize=21
+    )
 
 
 def border_white(image: np.ndarray, border: int = 5) -> np.ndarray:
@@ -66,10 +70,15 @@ def edge_detect(image: np.ndarray, low: int = 50, high: int = 150) -> np.ndarray
     return cv2.Canny(gray, low, high)
 
 
-def preprocess_captcha(image: np.ndarray, extra: dict[str, Any] | None = None) -> Image.Image:
+def preprocess_captcha(
+    image: np.ndarray, extra: dict[str, Any] | None = None
+) -> Image.Image:
     """Default preprocessing pipeline for character captchas."""
     extra = extra or {}
-    steps = extra.get("preprocess_steps", ["grayscale", "binary", "denoise", "noise_unsome_pixel", "border_white"])
+    steps = extra.get(
+        "preprocess_steps",
+        ["grayscale", "binary", "denoise", "noise_unsome_pixel", "border_white"],
+    )
 
     result = image
     for step in steps:

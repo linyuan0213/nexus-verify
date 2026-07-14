@@ -89,11 +89,12 @@ class ImageClickProvider(Provider):
         num_parts = 3
         part_width = target.shape[1] // num_parts
         return [
-            target[:, i * part_width : (i + 1) * part_width]
-            for i in range(num_parts)
+            target[:, i * part_width : (i + 1) * part_width] for i in range(num_parts)
         ]
 
-    def _detect_candidates(self, background: np.ndarray) -> list[tuple[int, int, int, int]]:
+    def _detect_candidates(
+        self, background: np.ndarray
+    ) -> list[tuple[int, int, int, int]]:
         candidates: list[tuple[int, int, int, int]] = []
         seen: set[tuple[int, int, int, int]] = set()
 
@@ -102,7 +103,9 @@ class ImageClickProvider(Provider):
             & (background[:, :, 1] < 30)
             & (background[:, :, 2] < 30)
         ).astype(np.uint8) * 255
-        contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
         for c in contours:
             x, y, w, h = cv2.boundingRect(c)
             area = cv2.contourArea(c)
@@ -143,11 +146,17 @@ class ImageClickProvider(Provider):
         except Exception:
             return ""
 
-    def _get_outer_contour(self, mask: np.ndarray, kernel_size: int = 3) -> np.ndarray | None:
+    def _get_outer_contour(
+        self, mask: np.ndarray, kernel_size: int = 3
+    ) -> np.ndarray | None:
         mask_u8 = (mask * 255).astype(np.uint8)
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (kernel_size, kernel_size))
+        kernel = cv2.getStructuringElement(
+            cv2.MORPH_ELLIPSE, (kernel_size, kernel_size)
+        )
         closed = cv2.morphologyEx(mask_u8, cv2.MORPH_CLOSE, kernel)
-        contours, _ = cv2.findContours(closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours, _ = cv2.findContours(
+            closed, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
+        )
         if not contours:
             return None
         return max(contours, key=cv2.contourArea)

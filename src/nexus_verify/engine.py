@@ -2,7 +2,6 @@
 
 from nexus_verify.config import settings
 from nexus_verify.core import ProviderRegistry, TaskType, VerifyTask
-from nexus_verify.core.exceptions import ProviderNotFoundError
 from nexus_verify.core.result import VerifyResult
 from nexus_verify.providers import default_providers
 

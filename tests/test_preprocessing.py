@@ -1,7 +1,6 @@
 """Tests for image preprocessing utilities."""
 
 import numpy as np
-import pytest
 
 from nexus_verify.preprocessing import (
     binary,
@@ -9,7 +8,6 @@ from nexus_verify.preprocessing import (
     decode_base64,
     grayscale,
 )
-from tests.conftest import make_image_b64
 
 
 def test_decode_base64(sample_image_b64: str) -> None:

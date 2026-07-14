@@ -7,11 +7,16 @@ import numpy as np
 from PIL import Image
 
 from nexus_verify.preprocessing import cv2_to_pil
-from nexus_verify.providers.click_features import cosine_similarity, extract_click_feature
+from nexus_verify.providers.click_features import (
+    cosine_similarity,
+    extract_click_feature,
+)
 from nexus_verify.providers.click_solver import ClickCaptchaSolver, _preprocess_for_hog
 
 
-def compute_scores(provider, target_icons, target_masks, candidates, background, background_mask):
+def compute_scores(
+    provider, target_icons, target_masks, candidates, background, background_mask
+):
     n_targets = len(target_icons)
     n_candidates = len(candidates)
     label_scores = np.zeros((n_targets, n_candidates))
@@ -33,12 +38,16 @@ def compute_scores(provider, target_icons, target_masks, candidates, background,
 
             t_contour = target_contours[i]
             if t_contour is not None and candidate_contour is not None:
-                dist = cv2.matchShapes(t_contour, candidate_contour, cv2.CONTOURS_MATCH_I1, 0.0)
+                dist = cv2.matchShapes(
+                    t_contour, candidate_contour, cv2.CONTOURS_MATCH_I1, 0.0
+                )
                 shape_scores[i, j] = 1.0 / (1.0 + dist)
             else:
                 shape_scores[i, j] = 0.0
 
-            mask_scores[i, j] = provider._mask_correlation(target_masks[i], candidate_mask)
+            mask_scores[i, j] = provider._mask_correlation(
+                target_masks[i], candidate_mask
+            )
 
     return label_scores, shape_scores, mask_scores
 
@@ -65,7 +74,9 @@ def solve_assignment(cost, candidates):
 
     if n_candidates > 12:
         areas = [w * h for _, _, w, h in candidates]
-        top_indices = sorted(range(n_candidates), key=lambda idx: areas[idx], reverse=True)[:12]
+        top_indices = sorted(
+            range(n_candidates), key=lambda idx: areas[idx], reverse=True
+        )[:12]
         cost = cost[:, top_indices]
         selected_candidates = [candidates[idx] for idx in top_indices]
     else:
@@ -185,7 +196,12 @@ def match_icons(provider, target_icons, candidates, background):
         icon_points.append((cx, cy))
 
     hog_points, hog_max = hog_match(provider, target_icons, background)
-    if label_scores.max() == 0 and hog_points and len(hog_points) >= len(target_icons) and hog_max > 0.5:
+    if (
+        label_scores.max() == 0
+        and hog_points
+        and len(hog_points) >= len(target_icons)
+        and hog_max > 0.5
+    ):
         return hog_points
 
     return icon_points

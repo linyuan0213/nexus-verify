@@ -15,7 +15,9 @@ class VerifyRequest(BaseModel):
     image_url: str | None = None
     target: str | None = None
     provider: str | None = None
-    extra: dict[str, Any] | None = Field(default=None, description="Provider-specific options")
+    extra: dict[str, Any] | None = Field(
+        default=None, description="Provider-specific options"
+    )
 
 
 class VerifyResultData(BaseModel):

@@ -1,6 +1,6 @@
 """FastAPI router for verification endpoints."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from loguru import logger
 
 from nexus_verify.api.schemas import (
@@ -42,7 +42,9 @@ async def verify(request: VerifyRequest) -> VerifyResponse:
         provider=task.provider or "",
         result=_result_to_dict(result),
     )
-    logger.info(f"Verification success: task={task.task_type}, provider={task.provider or 'default'}, target={task.target or ''}, result={_result_to_dict(result)}")
+    logger.info(
+        f"Verification success: task={task.task_type}, provider={task.provider or 'default'}, target={task.target or ''}, result={_result_to_dict(result)}"
+    )
     return VerifyResponse(data=data)
 
 
@@ -55,10 +57,7 @@ async def list_providers() -> list[ProviderInfo]:
 @router.get("/tasks", response_model=list[TaskInfo])
 async def list_tasks() -> list[TaskInfo]:
     """List supported verification task types."""
-    return [
-        TaskInfo(task_type=t.value, description=t.value)
-        for t in TaskType
-    ]
+    return [TaskInfo(task_type=t.value, description=t.value) for t in TaskType]
 
 
 @router.get("/health", response_model=HealthResponse)
