@@ -1,4 +1,4 @@
-name: Nas-tools Ocr Docker
+name: Nexus Verify Docker
 on:
   workflow_dispatch:
   push:
@@ -6,45 +6,59 @@ on:
       - '*'
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: Run Tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@master
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: latest
+
+      - name: Run tests
+        run: uv run pytest tests/ -v
+
   build:
     runs-on: ubuntu-latest
     name: Build Docker Image
+    needs: test
     steps:
-      -
-        name: Checkout
+      - name: Checkout
         uses: actions/checkout@master
 
-      -
-        name: Release version
+      - name: Release version
         id: release_version
         run: |
           echo "VERSION=$(echo $GITHUB_REF_NAME | sed 's/v\(.*\)/\1/')" >> $GITHUB_ENV
 
-      -
-        name: Set Up QEMU
+      - name: Set Up QEMU
         uses: docker/setup-qemu-action@v3
 
-      -
-        name: Set Up Buildx
+      - name: Set Up Buildx
         uses: docker/setup-buildx-action@v3
 
-      -
-        name: Login DockerHub
+      - name: Login DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      -
-        name: Login GitHub Container Registry
+      - name: Login GitHub Container Registry
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - 
-        name: Build Image
+      - name: Build Image
         uses: docker/build-push-action@v5
         with:
           platforms: |
@@ -52,7 +66,7 @@ jobs:
             linux/arm64
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/nas-tools-ocr:latest
-            ${{ secrets.DOCKER_USERNAME }}/nas-tools-ocr:${{ env.VERSION }}
-            ghcr.io/${{ github.repository_owner }}/nas-tools-ocr:latest
-            ghcr.io/${{ github.repository_owner }}/nas-tools-ocr:${{ env.VERSION }}
+            ${{ secrets.DOCKER_USERNAME }}/nexus-verify:latest
+            ${{ secrets.DOCKER_USERNAME }}/nexus-verify:${{ env.VERSION }}
+            ghcr.io/${{ github.repository_owner }}/nexus-verify:latest
+            ghcr.io/${{ github.repository_owner }}/nexus-verify:${{ env.VERSION }}

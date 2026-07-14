@@ -1,18 +1,66 @@
-FROM python:3.10-slim-buster
+# Nexus Verify (OCR) Dockerfile
+# Multi-stage build using uv
 
-RUN mkdir -p /app/ocr_app
-
-COPY ./*.txt ./*.py ./*.sh ./*.onnx /app/
-COPY ./ocr_app/*.py /app/ocr_app/
-
-
-RUN cd /app \
-    && python3 -m pip install --upgrade pip -i https://pypi.tuna.tsinghua.edu.cn/simple\
-    && pip3 install --no-cache-dir -r requirements.txt --extra-index-url https://pypi.tuna.tsinghua.edu.cn/simple \
-    && rm -rf /tmp/* && rm -rf /root/.cache/* \
-    && sed -i 's#http://deb.debian.org#http://mirrors.aliyun.com/#g' /etc/apt/sources.list\
-    && apt-get --allow-releaseinfo-change update && apt install libgl1-mesa-glx libglib2.0-0 -y
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
 
 WORKDIR /app
 
-CMD ["python3", "ocr_server.py"]
+# Install build dependencies
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        gcc \
+        libffi-dev \
+        libssl-dev \
+        libglib2.0-0 \
+        libsm6 \
+        libxext6 \
+        libxrender-dev \
+        libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy project metadata and source
+COPY pyproject.toml uv.lock ./
+COPY src ./src
+COPY README.md ./
+
+# Sync production dependencies and build/install the package
+RUN uv sync --frozen --no-cache --no-editable --no-dev
+
+# ==================== Runtime ====================
+FROM python:3.12-slim-bookworm
+
+WORKDIR /app
+
+# Install runtime dependencies for OpenCV / ONNX runtime
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libgl1-mesa-glx \
+        libglib2.0-0 \
+        libsm6 \
+        libxext6 \
+        libxrender1 \
+        libgomp1 \
+        curl \
+        tzdata \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r nexus && useradd -r -g nexus -d /app -s /bin/bash nexus
+
+# Copy uv binary and application
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+COPY --chown=nexus:nexus . .
+COPY --from=builder --chown=nexus:nexus /app/.venv ./.venv
+
+USER nexus
+
+ENV TZ=Asia/Shanghai \
+    PYTHONUNBUFFERED=1 \
+    UV_NO_SYNC=1
+
+EXPOSE 9300
+
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+    CMD curl -fs http://localhost:9300/health || exit 1
+
+CMD ["uv", "run", "python", "-m", "nexus_verify.main"]

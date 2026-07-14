@@ -135,8 +135,10 @@ venv.bak/
 # Rope project settings
 .ropeproject
 
-# mkdocs documentation
-/site
+# Models
+models/*.onnx
+models/*.pt
+
 
 # mypy
 .mypy_cache/
