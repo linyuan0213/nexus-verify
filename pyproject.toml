@@ -2,6 +2,7 @@
 name = "nexus-verify"
 version = "2.0.0"
 description = "Multi-provider verification service"
+readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.110",
@@ -27,20 +28,52 @@ dev = [
     "pre-commit>=4.6.0",
 ]
 
-[project.scripts]
-nexus-verify = "nexus_verify.main:main"
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+exclude = [
+    ".git",
+    ".venv",
+    "__pycache__",
+    "*.egg-info",
+    "build",
+    "dist",
+]
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "F",  # Pyflakes
+    "I",  # isort
+    "S110",  # try-except-pass (do not silently swallow exceptions)
+]
+ignore = [
+    "S101",  # assert
+    "S311",  # pseudo-random generators
+    "S404",  # subprocess
+    "S603",  # subprocess-without-shell-equals-true
+    "S607",  # start-process-with-partial-path
+    "S608",  # hardcoded-sql-expression
+]
 
-[tool.hatch.build.targets.wheel]
-packages = ["src/nexus_verify"]
+[tool.ruff.lint.per-file-ignores]
+"tests/*.py" = ["S101"]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.12"
+exclude = [".venv", "__pycache__"]
+reportMissingImports = "warning"
+reportMissingTypeStubs = "warning"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-
-[tool.pyright]
-pythonVersion = "3.12"
-reportMissingImports = "warning"
-reportMissingTypeStubs = "warning"
+pythonpath = ["src"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v"
+filterwarnings = [
+    "ignore::DeprecationWarning:starlette.*",
+]

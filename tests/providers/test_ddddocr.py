@@ -5,7 +5,6 @@ import pytest
 from nexus_verify.core.task import TaskType, VerifyTask
 from nexus_verify.providers.ddddocr import DdddOcrProvider
 
-
 ddddocr = pytest.importorskip("ddddocr")
 
 

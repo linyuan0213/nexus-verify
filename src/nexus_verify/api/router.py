@@ -43,7 +43,10 @@ async def verify(request: VerifyRequest) -> VerifyResponse:
         result=_result_to_dict(result),
     )
     logger.info(
-        f"Verification success: task={task.task_type}, provider={task.provider or 'default'}, target={task.target or ''}, result={_result_to_dict(result)}"
+        f"Verification success: task={task.task_type}, "
+        f"provider={task.provider or 'default'}, "
+        f"target={task.target or ''}, "
+        f"result={_result_to_dict(result)}"
     )
     return VerifyResponse(data=data)
 

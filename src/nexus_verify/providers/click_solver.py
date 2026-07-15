@@ -18,7 +18,6 @@ from nexus_verify.providers.click_features import (
     extract_click_feature,
 )
 
-
 FEAT_SIZE = 32
 
 
@@ -26,14 +25,10 @@ def _preprocess_for_hog(image: Image.Image) -> np.ndarray:
     gray = np.array(image.convert("L"))
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(4, 4))
     enhanced = clahe.apply(gray)
-    binary = cv2.adaptiveThreshold(
-        enhanced, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
-    )
+    binary = cv2.adaptiveThreshold(enhanced, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
     if (binary == 0).sum() < (binary == 255).sum():
         binary = 255 - binary
-    resized = cv2.resize(
-        binary, (FEAT_SIZE, FEAT_SIZE), interpolation=cv2.INTER_LANCZOS4
-    )
+    resized = cv2.resize(binary, (FEAT_SIZE, FEAT_SIZE), interpolation=cv2.INTER_LANCZOS4)
     return resized.astype(np.float32) / 255.0
 
 
@@ -89,17 +84,13 @@ class FontLibrary:
             "~/.fonts",
             "~/.local/share/fonts",
         ]
-        return [
-            os.path.expanduser(d) for d in dirs if os.path.isdir(os.path.expanduser(d))
-        ]
+        return [os.path.expanduser(d) for d in dirs if os.path.isdir(os.path.expanduser(d))]
 
     def _scan(self) -> None:
         for directory in self._font_dirs:
             pattern = os.path.join(directory, "**", "*.tt[cf]")
             for path in glob.glob(pattern, recursive=True):
-                if not any(
-                    p.lower() in os.path.basename(path).lower() for p in _FONT_PATTERNS
-                ):
+                if not any(p.lower() in os.path.basename(path).lower() for p in _FONT_PATTERNS):
                     continue
                 for idx in range(8):
                     try:
@@ -117,9 +108,7 @@ class FontLibrary:
                         self._fonts.append((path, idx))
                         break
 
-    def _get_font(
-        self, path: str, idx: int, size: int
-    ) -> ImageFont.FreeTypeFont | None:
+    def _get_font(self, path: str, idx: int, size: int) -> ImageFont.FreeTypeFont | None:
         key = (path, idx, size)
         if key not in self._font_cache:
             try:
@@ -234,23 +223,13 @@ class ClickCaptchaSolver:
         results: list[str] = []
         results.append(self.cls_ocr.classification(_pil_to_bytes(crop)))
         _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        results.append(
-            self.cls_ocr.classification(_pil_to_bytes(Image.fromarray(binary)))
-        )
+        results.append(self.cls_ocr.classification(_pil_to_bytes(Image.fromarray(binary))))
         clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(4, 4))
-        results.append(
-            self.cls_ocr.classification(
-                _pil_to_bytes(Image.fromarray(clahe.apply(gray)))
-            )
-        )
-        results.append(
-            self.cls_ocr.classification(_pil_to_bytes(Image.fromarray(255 - gray)))
-        )
+        results.append(self.cls_ocr.classification(_pil_to_bytes(Image.fromarray(clahe.apply(gray)))))
+        results.append(self.cls_ocr.classification(_pil_to_bytes(Image.fromarray(255 - gray))))
         blurred = cv2.GaussianBlur(gray, (3, 3), 0)
         _, binary2 = cv2.threshold(blurred, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        results.append(
-            self.cls_ocr.classification(_pil_to_bytes(Image.fromarray(binary2)))
-        )
+        results.append(self.cls_ocr.classification(_pil_to_bytes(Image.fromarray(binary2))))
         counter = Counter(results)
         char, count = counter.most_common(1)[0]
         return char, count / len(results), set(results)

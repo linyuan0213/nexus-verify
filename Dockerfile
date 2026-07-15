@@ -1,5 +1,5 @@
 # Nexus Verify (OCR) Dockerfile
-# Multi-stage build using uv
+# Multi-stage build using uv; runs directly from source, no wheel build required.
 
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
 
@@ -18,13 +18,11 @@ RUN apt-get update \
         libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy project metadata and source
+# Copy project metadata and lockfile
 COPY pyproject.toml uv.lock ./
-COPY src ./src
-COPY README.md ./
 
-# Sync production dependencies and build/install the package
-RUN uv sync --frozen --no-cache --no-editable --no-dev
+# Sync production dependencies only (no package build needed)
+RUN uv sync --frozen --no-cache --no-dev
 
 # ==================== Runtime ====================
 FROM python:3.12-slim-bookworm
@@ -47,7 +45,7 @@ RUN apt-get update \
 # Create non-root user
 RUN groupadd -r nexus && useradd -r -g nexus -d /app -s /bin/bash nexus
 
-# Copy uv binary and application
+# Copy uv binary, application source, and virtual environment
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 COPY --chown=nexus:nexus . .
 COPY --from=builder --chown=nexus:nexus /app/.venv ./.venv
@@ -55,6 +53,7 @@ COPY --from=builder --chown=nexus:nexus /app/.venv ./.venv
 USER nexus
 
 ENV TZ=Asia/Shanghai \
+    PYTHONPATH=/app/src \
     PYTHONUNBUFFERED=1 \
     UV_NO_SYNC=1
 

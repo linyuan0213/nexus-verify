@@ -1,15 +1,14 @@
 """Image loading and decoding utilities."""
 
 import base64
-import cv2
 from io import BytesIO
 from typing import Any
 
+import cv2
 import numpy as np
 from PIL import Image
 
 from nexus_verify.core.exceptions import ImageDecodeError
-
 
 ARRAY = np.ndarray[tuple[int, ...], np.dtype[np.integer | np.floating]]
 

@@ -4,14 +4,12 @@ import numpy as np
 import pytest
 from PIL import Image
 
+from nexus_verify.preprocessing import pil_to_cv2
 from nexus_verify.providers.click_features import (
     cosine_similarity,
     extract_click_feature,
 )
 from nexus_verify.providers.click_solver import ClickCaptchaSolver, FontLibrary
-
-from nexus_verify.preprocessing import pil_to_cv2
-
 
 ddddocr = pytest.importorskip("ddddocr")
 
@@ -72,7 +70,7 @@ def test_click_solver_with_ocr_bonus() -> None:
     boxes = [[0, 0, 30, 30], [40, 0, 70, 30], [80, 0, 110, 30]]
     image = Image.new("RGB", (120, 40), (255, 255, 255))
     ocr = FakeOcr(boxes, ["碍", "蹦", "崩"] * 5)
-    solver = ClickCaptchaSolver(ocr, ocr, font_library=FakeFontLibrary({}))
+    solver = ClickCaptchaSolver(ocr, ocr, font_library=FakeFontLibrary({}))  # type: ignore[arg-type]
     points = solver.solve(pil_to_cv2(image), "碍蹦崩")
     assert points == [(15, 15), (55, 15), (95, 15)]
 
@@ -80,7 +78,7 @@ def test_click_solver_with_ocr_bonus() -> None:
 def test_click_solver_no_detections() -> None:
     image = Image.new("RGB", (100, 100), (255, 255, 255))
     ocr = FakeOcr([], [])
-    solver = ClickCaptchaSolver(ocr, ocr, font_library=FakeFontLibrary({}))
+    solver = ClickCaptchaSolver(ocr, ocr, font_library=FakeFontLibrary({}))  # type: ignore[arg-type]
     with pytest.raises(Exception):
         solver.solve(image, "碍")
 
@@ -88,7 +86,7 @@ def test_click_solver_no_detections() -> None:
 def test_click_solver_not_enough_detections() -> None:
     image = Image.new("RGB", (100, 100), (255, 255, 255))
     ocr = FakeOcr([[0, 0, 10, 10]], ["x"] * 5)
-    solver = ClickCaptchaSolver(ocr, ocr, font_library=FakeFontLibrary({}))
+    solver = ClickCaptchaSolver(ocr, ocr, font_library=FakeFontLibrary({}))  # type: ignore[arg-type]
     with pytest.raises(Exception):
         solver.solve(image, "abc")
 

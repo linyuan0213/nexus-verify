@@ -3,8 +3,8 @@
 import pytest
 
 from nexus_verify.core import (
-    ProviderRegistry,
     ProviderNotFoundError,
+    ProviderRegistry,
     ProviderUnavailableError,
 )
 from nexus_verify.core.task import TaskType, VerifyTask

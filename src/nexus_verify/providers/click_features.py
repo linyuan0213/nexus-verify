@@ -4,7 +4,6 @@ import cv2
 import numpy as np
 from PIL import Image
 
-
 FEAT_SIZE = 32
 
 
@@ -46,9 +45,7 @@ def _to_hog(image: Image.Image | np.ndarray) -> np.ndarray:
     features: list[np.ndarray] = []
     for row in range(cell_rows - block_size + 1):
         for col in range(cell_cols - block_size + 1):
-            block = cell_histograms[
-                row : row + block_size, col : col + block_size
-            ].flatten()
+            block = cell_histograms[row : row + block_size, col : col + block_size].flatten()
             norm = np.linalg.norm(block) + 1e-7
             features.append(block / norm)
 
