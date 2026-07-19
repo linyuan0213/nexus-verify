@@ -1,17 +1,28 @@
 """OpenCV/ddddocr-based provider for slide and gap tasks."""
 
+import base64
 import io
 from typing import Any
 
 import cv2
 import ddddocr
 import numpy as np
+from PIL import Image
 
 from nexus_verify.core.exceptions import ImageDecodeError, RecognitionError
 from nexus_verify.core.result import VerifyResult
 from nexus_verify.core.task import TaskType, VerifyTask
-from nexus_verify.preprocessing import decode_base64, grayscale, load_image, pil_to_cv2
+from nexus_verify.preprocessing import grayscale, load_image
 from nexus_verify.providers.base import Provider
+
+
+def _decode_base64_rgba(image_b64: str) -> np.ndarray:
+    """Decode base64 image and return OpenCV BGRA ndarray, preserving alpha."""
+    raw = base64.b64decode(image_b64.encode("utf-8"))
+    image = Image.open(io.BytesIO(raw))
+    if image.mode == "RGBA":
+        return cv2.cvtColor(np.array(image), cv2.COLOR_RGBA2BGRA)
+    return cv2.cvtColor(np.array(image.convert("RGB")), cv2.COLOR_RGB2BGR)
 
 
 class SlideProvider(Provider):
@@ -44,7 +55,7 @@ class SlideProvider(Provider):
         slider_b64 = extra.get("slider_b64")
         if not slider_b64:
             raise ImageDecodeError("slide_captcha requires extra.slider_b64")
-        return pil_to_cv2(decode_base64(slider_b64))
+        return _decode_base64_rgba(slider_b64)
 
     def _crop_slider(self, slider: np.ndarray) -> tuple[np.ndarray, int]:
         """Crop composite slider images to the actual puzzle piece.
@@ -55,6 +66,16 @@ class SlideProvider(Provider):
         as the slider piece, along with the piece's x-offset in the original
         composite image.
         """
+        # RGBA composites: use the alpha channel to locate the puzzle piece.
+        if slider.shape[2] == 4:
+            alpha = slider[:, :, 3]
+            _, binary = cv2.threshold(alpha, 20, 255, cv2.THRESH_BINARY)
+            coords = cv2.findNonZero(binary)
+            if coords is not None:
+                x, y, w, h = cv2.boundingRect(coords)
+                strip = slider[y : y + h, x : x + w]
+                return strip, x
+
         gray = cv2.cvtColor(slider, cv2.COLOR_BGR2GRAY)
         _, binary = cv2.threshold(gray, 250, 255, cv2.THRESH_BINARY_INV)
         coords = cv2.findNonZero(binary)
@@ -65,9 +86,7 @@ class SlideProvider(Provider):
         strip = slider[y : y + h, x : x + w]
         strip_gray = gray[y : y + h, x : x + w]
         _, strip_bin = cv2.threshold(strip_gray, 250, 255, cv2.THRESH_BINARY_INV)
-        contours, _ = cv2.findContours(
-            strip_bin, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-        )
+        contours, _ = cv2.findContours(strip_bin, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
         best_piece: tuple[int, int, int, int] | None = None
         best_score = float("inf")
@@ -94,9 +113,7 @@ class SlideProvider(Provider):
             x + cx,
         )
 
-    def _fit_to_background(
-        self, slider: np.ndarray, background: np.ndarray
-    ) -> np.ndarray:
+    def _fit_to_background(self, slider: np.ndarray, background: np.ndarray) -> np.ndarray:
         """Resize slider so it fits inside the background for template matching."""
         bh, bw = background.shape[:2]
         sh, sw = slider.shape[:2]
@@ -107,9 +124,7 @@ class SlideProvider(Provider):
         new_h = max(1, int(sh * scale))
         return cv2.resize(slider, (new_w, new_h), interpolation=cv2.INTER_AREA)
 
-    def _match_slider(
-        self, background: np.ndarray, slider: np.ndarray, slider_offset: int = 0
-    ) -> VerifyResult:
+    def _match_slider(self, background: np.ndarray, slider: np.ndarray, slider_offset: int = 0) -> VerifyResult:
         slider = self._fit_to_background(slider, background)
         # Run ddddocr and OpenCV multi-scale in parallel and keep the result
         # with the highest reported confidence. The scaled puzzle piece often
@@ -140,13 +155,9 @@ class SlideProvider(Provider):
         x = int(points[0][0])
         y = int(points[0][1])
         distance = max(0, x + slider_offset)
-        return VerifyResult(
-            distance=distance, points=[(x, y)], confidence=best_confidence
-        )
+        return VerifyResult(distance=distance, points=[(x, y)], confidence=best_confidence)
 
-    def _resize_slider(
-        self, slider: np.ndarray, scale: float, background: np.ndarray
-    ) -> np.ndarray | None:
+    def _resize_slider(self, slider: np.ndarray, scale: float, background: np.ndarray) -> np.ndarray | None:
         sh, sw = slider.shape[:2]
         new_h = max(1, int(sh * scale))
         new_w = max(1, int(sw * scale))
@@ -154,9 +165,7 @@ class SlideProvider(Provider):
             return None
         return cv2.resize(slider, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
 
-    def _ddddocr_match(
-        self, background: np.ndarray, slider: np.ndarray
-    ) -> VerifyResult | None:
+    def _ddddocr_match(self, background: np.ndarray, slider: np.ndarray) -> VerifyResult | None:
         try:
             slide = ddddocr.DdddOcr(det=False, ocr=False, show_ad=False)
             bg_bytes = self._cv2_to_bytes(background)
@@ -173,10 +182,7 @@ class SlideProvider(Provider):
         bg_gray = grayscale(background)
         slider_gray = grayscale(slider)
 
-        if (
-            slider_gray.shape[0] > bg_gray.shape[0]
-            or slider_gray.shape[1] > bg_gray.shape[1]
-        ):
+        if slider_gray.shape[0] > bg_gray.shape[0] or slider_gray.shape[1] > bg_gray.shape[1]:
             raise RecognitionError("Slider image is larger than background")
 
         result = cv2.matchTemplate(bg_gray, slider_gray, cv2.TM_CCOEFF_NORMED)
