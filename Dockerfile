@@ -45,6 +45,9 @@ RUN apt-get update \
 # Create non-root user
 RUN groupadd -r nexus && useradd -r -g nexus -d /app -s /bin/bash nexus
 
+# uv runtime cache directory must be writable by the non-root user
+RUN mkdir -p /tmp/uv-cache && chown nexus:nexus /tmp/uv-cache
+
 # Copy uv binary, application source, and virtual environment
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 COPY --chown=nexus:nexus . .
@@ -55,7 +58,8 @@ USER nexus
 ENV TZ=Asia/Shanghai \
     PYTHONPATH=/app/src \
     PYTHONUNBUFFERED=1 \
-    UV_NO_SYNC=1
+    UV_NO_SYNC=1 \
+    UV_CACHE_DIR=/tmp/uv-cache
 
 EXPOSE 9300
 
