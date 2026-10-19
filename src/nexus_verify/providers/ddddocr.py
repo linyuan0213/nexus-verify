@@ -61,7 +61,16 @@ class DdddOcrProvider(Provider):
     def _recognize_text(self, image: Any, det_ocr: Any, cls_ocr: Any) -> VerifyResult:
         detections = self._detect_and_classify(image, det_ocr, cls_ocr)
         texts = [det["text"] for det in detections]
-        return VerifyResult(text="\n".join(texts))
+        if texts:
+            return VerifyResult(text="\n".join(texts))
+
+        # 字幕/海报等大字号文本常无法被验证码检测模型框出，回退整图分类
+        try:
+            beta = ddddocr.DdddOcr(beta=True, show_ad=False)
+            text = beta.classification(cv2_to_pil(image))
+            return VerifyResult(text=text if isinstance(text, str) else "")
+        except Exception as exc:
+            raise RecognitionError(f"OCR failed: {exc}") from exc
 
     def _detect_and_classify(self, image: Any, det_ocr: Any, cls_ocr: Any) -> list[dict[str, Any]]:
         try:
