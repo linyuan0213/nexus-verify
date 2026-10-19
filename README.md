@@ -244,6 +244,11 @@ just clean        # 清理缓存
 
 ## 更新日志
 
+### v2.0.3
+
+- `text_ocr` 在检测不到文本框时回退到整图分类，提升动画/影视硬字幕识别。
+- 字幕检测场景下可识别大字号、描边及彩色字幕。
+
 ### v2.0.0
 
 - 初始稳定版本：支持 captcha / click_captcha / image_click_captcha / slide_captcha / gap_match / rotate_captcha / text_ocr 等多种验证任务。
