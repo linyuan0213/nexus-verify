@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from nexus_verify import __version__
 from nexus_verify.core.task import TaskType
 
 
@@ -15,9 +16,7 @@ class VerifyRequest(BaseModel):
     image_url: str | None = None
     target: str | None = None
     provider: str | None = None
-    extra: dict[str, Any] | None = Field(
-        default=None, description="Provider-specific options"
-    )
+    extra: dict[str, Any] | None = Field(default=None, description="Provider-specific options")
 
 
 class VerifyResultData(BaseModel):
@@ -55,4 +54,30 @@ class HealthResponse(BaseModel):
     """Health check response."""
 
     status: str = "ok"
-    version: str = "2.0.0"
+    version: str = __version__
+
+
+class FaceBBoxRequest(BaseModel):
+    """Request for face bounding-box detection."""
+
+    image_b64: str
+    min_size: int = 40
+
+
+class FaceBox(BaseModel):
+    """Detected face rectangle in pixels."""
+
+    x: int
+    y: int
+    width: int
+    height: int
+
+
+class FaceBBoxResponse(BaseModel):
+    """Detected faces and source image dimensions."""
+
+    code: int = 0
+    faces: list[FaceBox] = Field(default_factory=list)
+    width: int = 0
+    height: int = 0
+    message: str = "ok"

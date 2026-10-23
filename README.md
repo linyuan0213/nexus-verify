@@ -38,6 +38,7 @@ PYTHONPATH=src uv run python -m nexus_verify.main
 | POST | `/verify` | 提交验证任务 |
 | GET | `/providers` | 列出已注册 Provider |
 | GET | `/tasks` | 列出支持的任务类型 |
+| POST | `/face/bbox` | 检测图片中的人脸矩形框 |
 | GET | `/health` | 健康检查 |
 
 ### 通用请求格式
@@ -243,6 +244,12 @@ just clean        # 清理缓存
 ```
 
 ## 更新日志
+
+### v2.1.0
+
+- 新增 `POST /face/bbox` 人脸检测接口，返回图片尺寸与人脸矩形框，供裁剪/构图场景使用。
+- `captcha` 新增 `raw`、`line_remove`、`ensemble` 识别选项，支持原图识别、去横线识别和多预处理逐位投票。
+- `text_ocr` 检测不到文本框时回退整图分类，提升动画/影视硬字幕识别。
 
 ### v2.0.3
 
