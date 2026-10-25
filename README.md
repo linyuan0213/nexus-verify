@@ -265,3 +265,42 @@ just clean        # 清理缓存
 ## 许可证
 
 MIT
+
+## 视觉模型 Provider
+
+除了本地 OCR，nexus-verify 支持 OpenAI 兼容的视觉模型识别验证码。
+
+配置环境变量：
+
+```bash
+NV_VISION_API_URL=https://api.example.com/v1/chat/completions
+NV_VISION_API_KEY=your-key
+NV_VISION_MODEL=qwen-vl-ocr
+NV_VISION_PROMPT="Read the CAPTCHA. Return only the characters, lowercase."
+NV_VISION_MAX_TOKENS=1000
+NV_VISION_TIMEOUT=60
+```
+
+调用时指定 provider：
+
+```json
+{
+  "task_type": "captcha",
+  "provider": "vision",
+  "image_b64": "...",
+  "extra": {"length": 5}
+}
+```
+
+行为：
+
+- `vision_api_url` 或 `vision_api_key` 未配置时，provider 显示为不可用
+- 返回内容会剥离代码块、引号、空白，只保留小写字母和数字
+- HTTP/解析失败统一返回可识别的错误，不泄露密钥
+- 插件侧采用 `vision` 优先、`ddddocr` 回退
+
+可用性检查：
+
+```bash
+curl http://127.0.0.1:9300/providers
+```

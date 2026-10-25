@@ -6,6 +6,7 @@ from nexus_verify.providers.ddddocr import DdddOcrProvider
 from nexus_verify.providers.image_click import ImageClickProvider
 from nexus_verify.providers.rotate import RotateProvider
 from nexus_verify.providers.slide import SlideProvider
+from nexus_verify.providers.vision import VisionProvider
 
 
 def default_providers() -> list[Provider]:
@@ -16,6 +17,7 @@ def default_providers() -> list[Provider]:
         SlideProvider(),
         RotateProvider(),
         CustomProvider(),
+        VisionProvider(),
     ]
 
 
@@ -26,5 +28,6 @@ __all__ = [
     "SlideProvider",
     "RotateProvider",
     "CustomProvider",
+    "VisionProvider",
     "default_providers",
 ]
