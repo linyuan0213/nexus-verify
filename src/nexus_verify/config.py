@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     vision_timeout: float = 60.0
     vision_max_tokens: int = 1000
     vision_temperature: float = 0.0
+    vision_max_retries: int = 2
+    vision_retry_backoff: float = 0.5
+    vision_concurrency: int = 2
     vision_prompt: str = (
         "Read the CAPTCHA in the image and return only its characters, lowercase, no spaces, no explanations."
     )

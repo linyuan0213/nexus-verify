@@ -14,10 +14,18 @@ from nexus_verify.providers.vision import VisionProvider, clean_captcha_text
 
 class _Handler(BaseHTTPRequestHandler):
     answer = "```text\nAB12\n```"
+    attempts = 0
+    fail_first = False
 
     def do_POST(self) -> None:  # noqa: N802
+        type(self).attempts += 1
         length = int(self.headers.get("Content-Length", "0"))
         body = json.loads(self.rfile.read(length) or b"{}")
+        if self.fail_first and self.attempts == 1:
+            self.send_response(503)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
         assert body["model"] == "test-vl"
         payload = {
             "choices": [{"message": {"content": self.answer}}],
@@ -50,6 +58,19 @@ def mock_vision(monkeypatch):
 def test_clean_captcha_text() -> None:
     assert clean_captcha_text("```\nAb12\n```") == "ab12"
     assert clean_captcha_text('"x y z"') == "xyz"
+
+
+@pytest.mark.asyncio
+async def test_vision_provider_retries_transient_error(mock_vision, monkeypatch) -> None:
+    _Handler.fail_first = True
+    _Handler.attempts = 0
+    monkeypatch.setattr(settings, "vision_retry_backoff", 0)
+    try:
+        result = await VisionProvider().verify(VerifyTask(task_type=TaskType.CAPTCHA, image_b64="aGVsbG8="))
+    finally:
+        _Handler.fail_first = False
+    assert result.text == "ab12"
+    assert _Handler.attempts == 2
 
 
 @pytest.mark.asyncio

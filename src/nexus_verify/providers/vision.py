@@ -1,6 +1,8 @@
 """OpenAI-compatible vision provider for image CAPTCHA recognition."""
 
+import asyncio
 import re
+import time
 from typing import Any
 
 import httpx
@@ -12,7 +14,7 @@ from nexus_verify.core.task import TaskType, VerifyTask
 from nexus_verify.providers.base import Provider
 
 
-def clean_captcha_text(value: str) -> str:
+def clean_captcha_text(value: str, *, length: int | None = None) -> str:
     """Normalize a vision model answer to the lowercase alphanumeric CAPTCHA."""
     text = value or ""
     text = re.sub(r"```[a-zA-Z0-9_-]*", "", text)
@@ -20,6 +22,20 @@ def clean_captcha_text(value: str) -> str:
     text = text.strip().strip("\"'`").strip()
     lines = [line.strip() for line in text.splitlines() if line.strip()]
     candidate = lines[0] if lines else text
+    tokens = re.findall(r"[A-Za-z0-9]+", candidate)
+    if tokens:
+        if length:
+            preferred = [token for token in tokens if len(token) == int(length)]
+            if preferred:
+                candidate = preferred[0]
+            elif all(len(token) == 1 for token in tokens):
+                candidate = "".join(tokens)
+            else:
+                candidate = tokens[-1]
+        elif all(len(token) == 1 for token in tokens):
+            candidate = "".join(tokens)
+        else:
+            candidate = tokens[-1]
     candidate = re.sub(r"[^A-Za-z0-9]", "", candidate).lower()
     return candidate
 
@@ -29,6 +45,9 @@ class VisionProvider(Provider):
 
     name = "vision"
     tasks = {TaskType.CAPTCHA, TaskType.TEXT_OCR}
+
+    def __init__(self) -> None:
+        self._semaphore = asyncio.Semaphore(max(1, settings.vision_concurrency))
 
     @property
     def available(self) -> bool:
@@ -64,27 +83,51 @@ class VisionProvider(Provider):
             "Authorization": f"Bearer {settings.vision_api_key}",
             "Content-Type": "application/json",
         }
-        try:
-            endpoint = settings.vision_api_url.rstrip("/")
-            if not endpoint.endswith("/chat/completions"):
-                endpoint += "/chat/completions"
-            async with httpx.AsyncClient(timeout=settings.vision_timeout) as client:
-                response = await client.post(endpoint, json=payload, headers=headers)
-            response.raise_for_status()
-            body = response.json()
-        except httpx.HTTPStatusError as exc:
-            raise RecognitionError(f"vision endpoint returned HTTP {exc.response.status_code}") from exc
-        except (httpx.HTTPError, ValueError) as exc:
-            raise RecognitionError(f"vision request failed: {exc}") from exc
+        endpoint = settings.vision_api_url.rstrip("/")
+        if not endpoint.endswith("/chat/completions"):
+            endpoint += "/chat/completions"
+        retryable_status = {408, 409, 425, 429, 500, 502, 503, 504}
+        max_retries = max(0, int(extra.get("max_retries", settings.vision_max_retries)))
+        started = time.monotonic()
 
+        body: dict[str, Any] | None = None
+        attempts_used = 0
+        async with self._semaphore:
+            for attempt in range(max_retries + 1):
+                attempts_used = attempt + 1
+                try:
+                    async with httpx.AsyncClient(timeout=settings.vision_timeout) as client:
+                        response = await client.post(endpoint, json=payload, headers=headers)
+                    response.raise_for_status()
+                    body = response.json()
+                    break
+                except httpx.HTTPStatusError as exc:
+                    status = exc.response.status_code
+                    if status in retryable_status and attempt < max_retries:
+                        await asyncio.sleep(settings.vision_retry_backoff * (2**attempt))
+                        continue
+                    raise RecognitionError(f"vision endpoint returned HTTP {status}") from exc
+                except (httpx.HTTPError, ValueError) as exc:
+                    if attempt < max_retries:
+                        await asyncio.sleep(settings.vision_retry_backoff * (2**attempt))
+                        continue
+                    raise RecognitionError(f"vision request failed: {exc}") from exc
+
+        if body is None:
+            raise RecognitionError("vision request failed without a response")
         content = self._extract_content(body)
-        text = clean_captcha_text(content)
+        text = clean_captcha_text(content, length=extra.get("length"))
         if not text:
             raise RecognitionError("vision model returned an empty captcha")
         return VerifyResult(
             text=text,
             confidence=None,
-            raw={"model": model, "usage": body.get("usage")},
+            raw={
+                "model": model,
+                "usage": body.get("usage"),
+                "attempts": attempts_used,
+                "latency_ms": round((time.monotonic() - started) * 1000),
+            },
         )
 
     @staticmethod
