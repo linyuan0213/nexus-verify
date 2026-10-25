@@ -65,8 +65,11 @@ class VisionProvider(Provider):
             "Content-Type": "application/json",
         }
         try:
+            endpoint = settings.vision_api_url.rstrip("/")
+            if not endpoint.endswith("/chat/completions"):
+                endpoint += "/chat/completions"
             async with httpx.AsyncClient(timeout=settings.vision_timeout) as client:
-                response = await client.post(settings.vision_api_url, json=payload, headers=headers)
+                response = await client.post(endpoint, json=payload, headers=headers)
             response.raise_for_status()
             body = response.json()
         except httpx.HTTPStatusError as exc:
