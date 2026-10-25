@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
-    model_config = SettingsConfigDict(env_prefix="NV_")
+    model_config = SettingsConfigDict(env_prefix="NV_", env_file=".env", extra="ignore")
 
     app_name: str = "Nexus Verify"
     host: str = "0.0.0.0"
