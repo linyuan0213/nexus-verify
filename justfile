@@ -45,7 +45,7 @@ tag-release:
         echo "标签 ${TAG} 已存在。" >&2
         exit 1
     fi
-    awk "/^## ${TAG} /{flag=1;next}/^## v/{flag=0}flag" README.md | grep -q . || echo "警告：README.md 中未找到 ${TAG} 的更新日志"
+    awk "/^### ${TAG}([[:space:]]|$)/{flag=1;next}/^### v/{flag=0}flag" README.md | grep -q . || echo "警告：README.md 中未找到 ${TAG} 的更新日志"
     git tag -a "${TAG}" -m "Release ${TAG}"
     echo "已创建标签 ${TAG}。推送触发发布：git push origin ${TAG}"
 

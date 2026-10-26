@@ -1,12 +1,18 @@
 """Application configuration."""
 
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
-    model_config = SettingsConfigDict(env_prefix="NV_")
+    model_config = SettingsConfigDict(
+        env_prefix="NV_",
+        env_file=str(Path(__file__).resolve().parents[2] / ".env"),
+        extra="ignore",
+    )
 
     app_name: str = "Nexus Verify"
     host: str = "0.0.0.0"
@@ -20,6 +26,20 @@ class Settings(BaseSettings):
     default_provider_slide_captcha: str = "slide"
     default_provider_rotate_captcha: str = "rotate"
     default_provider_gap_match: str = "slide"
+
+    # OpenAI 兼容视觉模型（验证码识别）
+    vision_api_url: str = ""
+    vision_api_key: str = ""
+    vision_model: str = "qwen-vl-ocr"
+    vision_timeout: float = 60.0
+    vision_max_tokens: int = 1000
+    vision_temperature: float = 0.0
+    vision_max_retries: int = 2
+    vision_retry_backoff: float = 0.5
+    vision_concurrency: int = 2
+    vision_prompt: str = (
+        "Read the CAPTCHA in the image and return only its characters, lowercase, no spaces, no explanations."
+    )
 
 
 settings = Settings()

@@ -245,6 +245,12 @@ just clean        # 清理缓存
 
 ## 更新日志
 
+### v2.2.0
+
+- 新增 OpenAI 兼容视觉验证码 Provider，支持自定义模型、接口地址和识别提示词。
+- 支持通过 `.env` 配置视觉模型，并统一模型端点与配置路径。
+- 视觉识别增加瞬时错误重试、并发限制和请求耗时统计，提升服务稳定性与可观测性。
+
 ### v2.1.0
 
 - 新增 `POST /face/bbox` 人脸检测接口，返回图片尺寸与人脸矩形框，供裁剪/构图场景使用。
@@ -265,3 +271,45 @@ just clean        # 清理缓存
 ## 许可证
 
 MIT
+
+## 视觉模型 Provider
+
+除了本地 OCR，nexus-verify 支持 OpenAI 兼容的视觉模型识别验证码。
+
+配置环境变量：
+
+```bash
+NV_VISION_API_URL=https://api.example.com/v1/chat/completions
+NV_VISION_API_KEY=your-key
+NV_VISION_MODEL=qwen-vl-ocr
+NV_VISION_PROMPT="Read the CAPTCHA. Return only the characters, lowercase."
+NV_VISION_MAX_TOKENS=1000
+NV_VISION_TIMEOUT=60
+NV_VISION_MAX_RETRIES=2
+NV_VISION_RETRY_BACKOFF=0.5
+NV_VISION_CONCURRENCY=2
+```
+
+调用时指定 provider：
+
+```json
+{
+  "task_type": "captcha",
+  "provider": "vision",
+  "image_b64": "...",
+  "extra": {"length": 5}
+}
+```
+
+行为：
+
+- `vision_api_url` 或 `vision_api_key` 未配置时，provider 显示为不可用
+- 返回内容会剥离代码块、引号、空白，只保留小写字母和数字
+- HTTP/解析失败统一返回可识别的错误，不泄露密钥
+- 插件侧采用 `vision` 优先、`ddddocr` 回退
+
+可用性检查：
+
+```bash
+curl http://127.0.0.1:9300/providers
+```
