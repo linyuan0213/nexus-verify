@@ -306,7 +306,7 @@ wheels = [
 
 [[package]]
 name = "nexus-verify"
-version = "2.1.0"
+version = "2.2.0"
 source = { virtual = "." }
 dependencies = [
     { name = "ddddocr" },

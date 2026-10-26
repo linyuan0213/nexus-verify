@@ -69,7 +69,7 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=$GITHUB_REF_NAME" >> $GITHUB_OUTPUT
 
-          CONTENT=$(awk '/^## v'"$VERSION"' /{flag=1;next}/^## v/{flag=0}flag' README.md)
+          CONTENT=$(awk '/^### v'"$VERSION"'([[:space:]]|$)/{flag=1;next}/^### v/{flag=0}flag' README.md)
           if [ -z "$CONTENT" ]; then
             CONTENT="Nexus Verify $GITHUB_REF_NAME 已发布。"
           fi
