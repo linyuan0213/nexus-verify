@@ -245,6 +245,10 @@ just clean        # 清理缓存
 
 ## 更新日志
 
+### v2.2.1
+
+- 打包 YuNet 人脸检测模型，修复 Docker 镜像中 `/face/bbox` 返回 `face model missing`。
+
 ### v2.2.0
 
 - 新增 OpenAI 兼容视觉验证码 Provider，支持自定义模型、接口地址和识别提示词。

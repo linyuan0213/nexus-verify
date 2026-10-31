@@ -137,6 +137,7 @@ venv.bak/
 
 # Models
 models/*.onnx
+!models/face_detection_yunet_2023mar.onnx
 models/*.pt
 
 
